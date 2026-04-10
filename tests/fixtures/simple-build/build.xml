@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<project basedir="." name="simple" default="main">
+  <target name="prepare"/>
+  <target name="write"/>
+  <target name="main" depends="prepare,write"/>
+</project>

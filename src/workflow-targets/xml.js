@@ -1,7 +1,10 @@
 const path = require("node:path");
 
 const { fsp } = require("../support/filesystem");
-const { extractXmlTagValue, extractWordDocVarValue } = require("../support/xml");
+const {
+  extractXmlTagValue,
+  extractWordDocVarValue,
+} = require("../support/xml");
 
 function resolveSourceFilePath(sourceFile, context) {
   if (typeof sourceFile === "function") {
@@ -77,7 +80,8 @@ function readProperties({
     }
 
     const previousState =
-      context.state[rootStateKey] && typeof context.state[rootStateKey] === "object"
+      context.state[rootStateKey] &&
+      typeof context.state[rootStateKey] === "object"
         ? context.state[rootStateKey]
         : {};
 
@@ -126,7 +130,8 @@ function readWordDocVars({
     }
 
     const previousState =
-      context.state[rootStateKey] && typeof context.state[rootStateKey] === "object"
+      context.state[rootStateKey] &&
+      typeof context.state[rootStateKey] === "object"
         ? context.state[rootStateKey]
         : {};
 

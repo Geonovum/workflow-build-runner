@@ -48,10 +48,91 @@ test("package exports the expected public api", () => {
   assert.equal(typeof packageApi.runBuild, "function");
   assert.equal(typeof packageApi.runCli, "function");
   assert.equal(typeof packageApi.workflowTargets.word.common.init, "function");
+  assert.equal(typeof packageApi.workflowTargets.xml.readProperties, "function");
   assert.equal(
     typeof packageApi.workflowTargets.waardelijsten.export.transform,
     "function",
   );
+});
+
+test("xml.readProperties reads config values into context.state", async () => {
+  const tempRoot = await fs.mkdtemp(
+    path.join(os.tmpdir(), "workflow-build-runner-xml-state-"),
+  );
+
+  try {
+    const configXmlPath = path.join(tempRoot, "config.xml");
+    await fs.writeFile(
+      configXmlPath,
+      [
+        "<config>",
+        "  <currentVersion>2.4.1</currentVersion>",
+        "  <lastPublishedVersion>2.3.9</lastPublishedVersion>",
+        "</config>",
+      ].join("\n"),
+      "utf8",
+    );
+
+    const context = { state: {} };
+    const target = packageApi.workflowTargets.xml.readProperties({
+      sourceFile: configXmlPath,
+      mappings: {
+        currentVersion: "currentVersion",
+        previousVersion: "lastPublishedVersion",
+      },
+      stateKey: "config",
+    });
+
+    await target(context);
+
+    assert.deepEqual(context.state.config, {
+      currentVersion: "2.4.1",
+      previousVersion: "2.3.9",
+    });
+  } finally {
+    await fs.rm(tempRoot, { recursive: true, force: true });
+  }
+});
+
+test("xml.readWordDocVars reads docVar values from settings.xml", async () => {
+  const tempRoot = await fs.mkdtemp(
+    path.join(os.tmpdir(), "workflow-build-runner-xml-docvars-"),
+  );
+
+  try {
+    const settingsXmlPath = path.join(tempRoot, "settings.xml");
+    await fs.writeFile(
+      settingsXmlPath,
+      [
+        "<w:settings xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\">",
+        "  <w:docVars>",
+        "    <w:docVar w:name=\"ID001\" w:val=\"Gebruikershandleiding\"/>",
+        "    <w:docVar w:name=\"ID101\" w:val=\"1.2.0\"/>",
+        "  </w:docVars>",
+        "</w:settings>",
+      ].join("\n"),
+      "utf8",
+    );
+
+    const context = { state: {} };
+    const target = packageApi.workflowTargets.xml.readWordDocVars({
+      sourceFile: settingsXmlPath,
+      mappings: {
+        title: "ID001",
+        currentVersion: "ID101",
+      },
+      stateKey: "config",
+    });
+
+    await target(context);
+
+    assert.deepEqual(context.state.config, {
+      title: "Gebruikershandleiding",
+      currentVersion: "1.2.0",
+    });
+  } finally {
+    await fs.rm(tempRoot, { recursive: true, force: true });
+  }
 });
 
 test("runBuild executes a sequence from a fixture build.js", async () => {

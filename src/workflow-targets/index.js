@@ -3,4 +3,5 @@ module.exports = {
   dsoToepassingsprofielenRhino: require("./dso-toepassingsprofielen-rhino"),
   waardelijsten: require("./waardelijsten"),
   overzicht: require("./overzicht"),
+  xml: require("./xml"),
 };

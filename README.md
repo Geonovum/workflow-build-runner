@@ -54,8 +54,10 @@ The CLI also accepts a `build.xml` path and resolves it to the sibling `build.js
 - This package depends on `saxon-js`, `xslt3` and `zip-lib`.
 - Some workflows try to use the `tidy` binary when generating XHTML snapshots. If it
   is not available, the runner falls back to copying the HTML file.
-- The package is currently marked `UNLICENSED`. Choose the real license before
-  publishing to npm.
+
+## License
+
+This project is licensed under Apache-2.0. See `LICENSE`.
 
 ## Release flow
 

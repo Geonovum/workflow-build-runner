@@ -8,6 +8,7 @@ It provides:
 - `defineBuild(...)` for declaring a build definition
 - `sequence([...])` for ordered target execution
 - `workflowTargets` with the current Geonovum workflow target implementations
+- `workflowTargets.custom.xslt(...)` for repository-local XSLT steps with CLI context paths
 - a `workflow-build-runner` CLI for executing a build definition
 
 ## Install
@@ -35,6 +36,34 @@ module.exports = workflowBuild.defineBuild({
   }
 });
 ```
+
+Generic XSLT target example:
+
+```js
+const workflowBuild = require("@geonovum/workflow-build-runner");
+
+module.exports = workflowBuild.defineBuild({
+  defaultTarget: "main",
+  targets: {
+    transform: workflowBuild.workflowTargets.custom.xslt({
+      stylesheet: "mijn-transform.xsl",
+      source: "input.xml",
+      output: "output.html",
+      params: {
+        "mijn-param": "waarde",
+      },
+    }),
+    main: workflowBuild.sequence(["transform"]),
+  },
+});
+```
+
+Path resolution for `workflowTargets.custom.xslt(...)`:
+
+- `stylesheet` is resolved relative to `buildRoot`
+- `source` is resolved relative to `inputDir`
+- `output` is resolved relative to `outputDir`
+- `params` accepts either an inline object or a JSON file path relative to `buildRoot`
 
 ## CLI
 

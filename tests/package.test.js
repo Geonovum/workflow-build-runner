@@ -47,12 +47,139 @@ test("package exports the expected public api", () => {
   assert.equal(typeof packageApi.sequence, "function");
   assert.equal(typeof packageApi.runBuild, "function");
   assert.equal(typeof packageApi.runCli, "function");
+  assert.equal(typeof packageApi.workflowTargets.custom.xslt, "function");
   assert.equal(typeof packageApi.workflowTargets.word.common.init, "function");
-  assert.equal(typeof packageApi.workflowTargets.xml.readProperties, "function");
+  assert.equal(
+    typeof packageApi.workflowTargets.xml.readProperties,
+    "function",
+  );
   assert.equal(
     typeof packageApi.workflowTargets.waardelijsten.export.transform,
     "function",
   );
+});
+
+test("custom.xslt resolves build, input and output paths and passes params", async () => {
+  const tempRoot = await fs.mkdtemp(
+    path.join(os.tmpdir(), "workflow-build-runner-custom-xslt-inline-"),
+  );
+  const buildRoot = path.join(tempRoot, "build");
+  const inputDir = path.join(tempRoot, "input");
+  const outputDir = path.join(tempRoot, "output");
+  const sefCacheDir = path.join(tempRoot, "sef-cache");
+
+  try {
+    await fs.mkdir(buildRoot, { recursive: true });
+    await fs.mkdir(inputDir, { recursive: true });
+    await fs.mkdir(outputDir, { recursive: true });
+    await fs.mkdir(sefCacheDir, { recursive: true });
+
+    await fs.writeFile(
+      path.join(buildRoot, "transform.xsl"),
+      [
+        '<xsl:stylesheet version="3.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">',
+        '  <xsl:output method="text" encoding="UTF-8"/>',
+        '  <xsl:param name="prefix"/>',
+        '  <xsl:param name="suffix"/>',
+        '  <xsl:template match="/">',
+        '    <xsl:value-of select="concat($prefix, /root/value, $suffix)"/>',
+        "  </xsl:template>",
+        "</xsl:stylesheet>",
+      ].join("\n"),
+      "utf8",
+    );
+    await fs.writeFile(
+      path.join(inputDir, "input.xml"),
+      "<root><value>wereld</value></root>",
+      "utf8",
+    );
+
+    const target = packageApi.workflowTargets.custom.xslt({
+      stylesheet: "transform.xsl",
+      source: "input.xml",
+      output: "result.txt",
+      params: {
+        prefix: "hallo ",
+        suffix: "!",
+      },
+    });
+
+    await target({
+      buildRoot,
+      inputDir,
+      outputDir,
+      sefCacheDir,
+    });
+
+    assert.equal(
+      await fs.readFile(path.join(outputDir, "result.txt"), "utf8"),
+      "hallo wereld!",
+    );
+  } finally {
+    await fs.rm(tempRoot, { recursive: true, force: true });
+  }
+});
+
+test("custom.xslt loads params from a JSON file in buildRoot", async () => {
+  const tempRoot = await fs.mkdtemp(
+    path.join(os.tmpdir(), "workflow-build-runner-custom-xslt-file-"),
+  );
+  const buildRoot = path.join(tempRoot, "build");
+  const inputDir = path.join(tempRoot, "input");
+  const outputDir = path.join(tempRoot, "output");
+  const sefCacheDir = path.join(tempRoot, "sef-cache");
+
+  try {
+    await fs.mkdir(buildRoot, { recursive: true });
+    await fs.mkdir(inputDir, { recursive: true });
+    await fs.mkdir(outputDir, { recursive: true });
+    await fs.mkdir(sefCacheDir, { recursive: true });
+
+    await fs.writeFile(
+      path.join(buildRoot, "transform.xsl"),
+      [
+        '<xsl:stylesheet version="3.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">',
+        '  <xsl:output method="text" encoding="UTF-8"/>',
+        '  <xsl:param name="label"/>',
+        '  <xsl:template match="/">',
+        "    <xsl:value-of select=\"concat($label, ':', /root/value)\"/>",
+        "  </xsl:template>",
+        "</xsl:stylesheet>",
+      ].join("\n"),
+      "utf8",
+    );
+    await fs.writeFile(
+      path.join(buildRoot, "params.json"),
+      JSON.stringify({ label: "build" }, null, 2),
+      "utf8",
+    );
+    await fs.writeFile(
+      path.join(inputDir, "input.xml"),
+      "<root><value>runner</value></root>",
+      "utf8",
+    );
+
+    const target = packageApi.workflowTargets.custom.xslt({
+      stylesheet: "transform.xsl",
+      source: "input.xml",
+      output: "result.txt",
+      params: "params.json",
+    });
+
+    await target({
+      buildRoot,
+      inputDir,
+      outputDir,
+      sefCacheDir,
+    });
+
+    assert.equal(
+      await fs.readFile(path.join(outputDir, "result.txt"), "utf8"),
+      "build:runner",
+    );
+  } finally {
+    await fs.rm(tempRoot, { recursive: true, force: true });
+  }
 });
 
 test("xml.readProperties reads config values into context.state", async () => {
@@ -104,10 +231,10 @@ test("xml.readWordDocVars reads docVar values from settings.xml", async () => {
     await fs.writeFile(
       settingsXmlPath,
       [
-        "<w:settings xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\">",
+        '<w:settings xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">',
         "  <w:docVars>",
-        "    <w:docVar w:name=\"ID001\" w:val=\"Gebruikershandleiding\"/>",
-        "    <w:docVar w:name=\"ID101\" w:val=\"1.2.0\"/>",
+        '    <w:docVar w:name="ID001" w:val="Gebruikershandleiding"/>',
+        '    <w:docVar w:name="ID101" w:val="1.2.0"/>',
         "  </w:docVars>",
         "</w:settings>",
       ].join("\n"),

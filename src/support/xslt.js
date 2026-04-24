@@ -212,4 +212,6 @@ async function runXsltTransform({
 
 module.exports = {
   runXsltTransform,
+  compileStylesheetToSef,
+  createCollectionFinder,
 };

@@ -4,6 +4,8 @@ const { fsp } = require("../support/filesystem");
 const {
   extractXmlTagValue,
   extractWordDocVarValue,
+  xmlProperty,
+  xmlPropertyFromText,
 } = require("../support/xml");
 
 function resolveSourceFilePath(sourceFile, context) {
@@ -57,10 +59,14 @@ function readProperties({
     }
 
     const xmlText = await fsp.readFile(sourcePath, "utf8");
+    const xmlProperties = xmlPropertyFromText(xmlText);
     const extracted = {};
 
     for (const [targetStateKey, tagName] of normalizedMappings) {
-      const value = extractXmlTagValue(xmlText, tagName);
+      const value =
+        xmlProperties[tagName] ||
+        xmlProperties[findPropertyKeyByLeafName(xmlProperties, tagName)] ||
+        extractXmlTagValue(xmlText, tagName);
       if (required && !value) {
         throw new Error(
           `xml.readProperties kon verplichte tag '${tagName}' niet vinden in ${sourcePath}.`,
@@ -88,6 +94,45 @@ function readProperties({
     context.state[rootStateKey] = {
       ...previousState,
       ...extracted,
+    };
+  };
+}
+
+function findPropertyKeyByLeafName(properties, leafName) {
+  const suffix = `.${String(leafName || "").trim()}`;
+  return Object.keys(properties).find((key) => key.endsWith(suffix)) || "";
+}
+
+function readXmlProperty({
+  sourceFile,
+  stateKey = "xml",
+  required = true,
+} = {}) {
+  return async function readXmlPropertyTarget(context) {
+    const sourcePath = resolveSourceFilePath(sourceFile, context);
+    if (!sourcePath) {
+      throw new Error("xml.xmlProperty heeft geen geldig sourceFile.");
+    }
+
+    const properties = await xmlProperty(sourcePath);
+    if (required && Object.keys(properties).length === 0) {
+      throw new Error(
+        `xml.xmlProperty kon geen properties lezen uit ${sourcePath}.`,
+      );
+    }
+
+    if (!context.state || typeof context.state !== "object") {
+      context.state = {};
+    }
+
+    const rootStateKey = String(stateKey || "").trim();
+    if (!rootStateKey) {
+      throw new Error("xml.xmlProperty vereist een geldige stateKey.");
+    }
+
+    context.state[rootStateKey] = {
+      ...(context.state[rootStateKey] || {}),
+      ...properties,
     };
   };
 }
@@ -144,5 +189,6 @@ function readWordDocVars({
 
 module.exports = {
   readProperties,
+  xmlProperty: readXmlProperty,
   readWordDocVars,
 };

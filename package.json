@@ -38,6 +38,8 @@
   },
   "license": "Apache-2.0",
   "dependencies": {
+    "glob": "^13.0.6",
+    "minimatch": "^10.2.5",
     "saxon-js": "^2.7.0",
     "xslt3": "^2.7.0",
     "zip-lib": "^1.2.1"

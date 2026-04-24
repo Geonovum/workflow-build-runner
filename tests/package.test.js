@@ -47,16 +47,135 @@ test("package exports the expected public api", () => {
   assert.equal(typeof packageApi.sequence, "function");
   assert.equal(typeof packageApi.runBuild, "function");
   assert.equal(typeof packageApi.runCli, "function");
+  assert.equal(typeof packageApi.build.fileset, "function");
+  assert.equal(typeof packageApi.build.checksum, "function");
+  assert.equal(typeof packageApi.build.basename, "function");
+  assert.equal(typeof packageApi.build.xslt, "function");
+  assert.equal(typeof packageApi.build.compileStylesheet, "function");
+  assert.equal(typeof packageApi.build.normalizeStylesheet, "function");
+  assert.equal(typeof packageApi.build.createGeneratedStylesheet, "function");
   assert.equal(typeof packageApi.workflowTargets.custom.xslt, "function");
+  assert.equal(typeof packageApi.workflowTargets.fs.copyDir, "function");
   assert.equal(typeof packageApi.workflowTargets.word.common.init, "function");
   assert.equal(
     typeof packageApi.workflowTargets.xml.readProperties,
     "function",
   );
+  assert.equal(typeof packageApi.workflowTargets.xml.xmlProperty, "function");
+  assert.equal(typeof packageApi.github.pushFileset, "function");
+  assert.equal(typeof packageApi.github.createGitHubAppApiClient, "function");
   assert.equal(
     typeof packageApi.workflowTargets.waardelijsten.export.transform,
     "function",
   );
+});
+
+test("build.xslt runs a direct XSLT helper transformation", async () => {
+  const tempRoot = await fs.mkdtemp(
+    path.join(os.tmpdir(), "workflow-build-runner-build-xslt-"),
+  );
+  const sefCacheDir = path.join(tempRoot, "sef-cache");
+
+  try {
+    const stylesheetFile = path.join(tempRoot, "transform.xsl");
+    const sourceFile = path.join(tempRoot, "input.xml");
+    const outputFile = path.join(tempRoot, "output.txt");
+
+    await fs.writeFile(
+      stylesheetFile,
+      [
+        '<xsl:stylesheet version="3.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">',
+        '  <xsl:output method="text" encoding="UTF-8"/>',
+        '  <xsl:param name="label"/>',
+        '  <xsl:template match="/">',
+        "    <xsl:value-of select=\"concat($label, ':', /root/value)\"/>",
+        "  </xsl:template>",
+        "</xsl:stylesheet>",
+      ].join("\n"),
+      "utf8",
+    );
+    await fs.writeFile(
+      sourceFile,
+      "<root><value>direct</value></root>",
+      "utf8",
+    );
+
+    await packageApi.build.xslt({
+      stylesheetFile,
+      sourceFile,
+      outputFile,
+      stylesheetParams: {
+        label: "build",
+      },
+      sefCacheDir,
+    });
+
+    assert.equal(await fs.readFile(outputFile, "utf8"), "build:direct");
+  } finally {
+    await fs.rm(tempRoot, { recursive: true, force: true });
+  }
+});
+
+test("build helpers expose fileset, checksum and basename", async () => {
+  const tempRoot = await fs.mkdtemp(
+    path.join(os.tmpdir(), "workflow-build-runner-build-helpers-"),
+  );
+
+  try {
+    await fs.mkdir(path.join(tempRoot, "src", "nested"), { recursive: true });
+    await fs.writeFile(path.join(tempRoot, "src", "a.txt"), "alpha", "utf8");
+    await fs.writeFile(path.join(tempRoot, "src", "b.md"), "bravo", "utf8");
+    await fs.writeFile(
+      path.join(tempRoot, "src", "nested", "c.txt"),
+      "charlie",
+      "utf8",
+    );
+
+    const files = await packageApi.build.fileset({
+      dir: path.join(tempRoot, "src"),
+      include: "**/*.txt",
+      exclude: "nested/**",
+    });
+
+    assert.deepEqual(
+      files.map((file) => file.path),
+      ["a.txt"],
+    );
+    assert.equal(packageApi.build.basename("archive.tar.gz"), "archive.tar");
+    assert.equal(
+      await packageApi.build.checksum(path.join(tempRoot, "src", "a.txt")),
+      "8ed3f6ad685b959ead7022518e1af76cd816f8e8ec7ccd" + "da1ed4018e8f2223f8",
+    );
+  } finally {
+    await fs.rm(tempRoot, { recursive: true, force: true });
+  }
+});
+
+test("workflowTargets.fs exposes declarative filesystem targets", async () => {
+  const tempRoot = await fs.mkdtemp(
+    path.join(os.tmpdir(), "workflow-build-runner-fs-targets-"),
+  );
+  const buildRoot = path.join(tempRoot, "build");
+  const outputDir = path.join(tempRoot, "output");
+
+  try {
+    await fs.mkdir(path.join(buildRoot, "assets"), { recursive: true });
+    await fs.writeFile(path.join(buildRoot, "assets", "style.css"), "body{}");
+
+    const copyAssets = packageApi.workflowTargets.fs.copyDir({
+      source: "assets",
+      destination: "assets",
+    });
+
+    await copyAssets({ buildRoot, outputDir });
+
+    assert.equal(
+      await fs.readFile(path.join(outputDir, "assets", "style.css"), "utf8"),
+      "body{}",
+    );
+  } finally {
+    await fs.rm(tempRoot, { recursive: true, force: true });
+  }
 });
 
 test("custom.xslt resolves build, input and output paths and passes params", async () => {
@@ -216,6 +335,43 @@ test("xml.readProperties reads config values into context.state", async () => {
       currentVersion: "2.4.1",
       previousVersion: "2.3.9",
     });
+  } finally {
+    await fs.rm(tempRoot, { recursive: true, force: true });
+  }
+});
+
+test("xml.xmlProperty reads nested XML elements and attributes into state", async () => {
+  const tempRoot = await fs.mkdtemp(
+    path.join(os.tmpdir(), "workflow-build-runner-xml-property-"),
+  );
+
+  try {
+    const configXmlPath = path.join(tempRoot, "config.xml");
+    await fs.writeFile(
+      configXmlPath,
+      [
+        '<config id="demo">',
+        "  <document>",
+        "    <title>Demo document</title>",
+        "  </document>",
+        "</config>",
+      ].join("\n"),
+      "utf8",
+    );
+
+    const context = { state: {} };
+    const target = packageApi.workflowTargets.xml.xmlProperty({
+      sourceFile: configXmlPath,
+      stateKey: "properties",
+    });
+
+    await target(context);
+
+    assert.equal(context.state.properties["config.id"], "demo");
+    assert.equal(
+      context.state.properties["config.document.title"],
+      "Demo document",
+    );
   } finally {
     await fs.rm(tempRoot, { recursive: true, force: true });
   }

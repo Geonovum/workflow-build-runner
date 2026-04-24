@@ -57,6 +57,7 @@ async function createPatchedReviewExcelStylesheet({ buildRoot, tempDir }) {
 }
 
 module.exports = {
+  normalizeStylesheetForSaxonJs,
   createGeneratedStylesheet,
   createUtf8CompatibleStylesheet,
   createPatchedReviewExcelStylesheet,

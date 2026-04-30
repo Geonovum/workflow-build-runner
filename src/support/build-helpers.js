@@ -102,6 +102,7 @@ async function xslt({
   outputFile,
   resultDocuments,
   stylesheetParams = {},
+  documentPool = {},
   sefCacheDir,
 } = {}) {
   const resolvedSourceFile = path.resolve(String(sourceFile || ""));
@@ -129,6 +130,8 @@ async function xslt({
     stylesheetFileName: resolvedSefFile,
     sourceFileName: resolvedSourceFile,
     stylesheetParams,
+    documentPool:
+      documentPool && typeof documentPool === "object" ? documentPool : {},
     collectionFinder: createCollectionFinder(),
   };
 
@@ -170,6 +173,10 @@ async function xslt({
   );
 }
 
+async function getResource(options) {
+  return SaxonJS.getResource(options);
+}
+
 module.exports = {
   fileset,
   normalizeFileset,
@@ -183,6 +190,7 @@ module.exports = {
   checksum,
   basename,
   xslt,
+  getResource,
   compileStylesheet,
   normalizeStylesheet,
   createGeneratedStylesheet,

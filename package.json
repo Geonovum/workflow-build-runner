@@ -1,6 +1,6 @@
 {
   "name": "@geonovum/workflow-build-runner",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Workflow build runner for JavaScript build definitions and XSLT-based document workflows.",
   "main": "index.js",
   "exports": {
@@ -8,7 +8,7 @@
     "./cli": "./src/cli.js"
   },
   "bin": {
-    "workflow-build-runner": "./bin/workflow-build-runner.js"
+    "workflow-build-runner": "bin/workflow-build-runner.js"
   },
   "files": [
     "bin",

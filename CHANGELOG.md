@@ -1,5 +1,15 @@
 # @geonovum/workflow-build-runner
 
+## 0.3.0
+
+### Minor Changes
+
+- Add build helpers and coverage for JavaScript replacements of legacy ANT workflow blocks.
+
+  This release adds public GitHub repository/fileset helpers, expands the build helper API with filesystem, fileset, checksum, XML property, stylesheet, XSLT resource, and path utilities, and supports passing a SaxonJS `documentPool` into direct XSLT transforms.
+
+  The package build now runs linting, the full Node test suite, and a dry-run package check. The tests include a representative ANT-style fixture that is executed through the CLI, plus targeted coverage for filesystem, XSLT, XML property, Word publication, waardelijsten publication, and GitHub fileset helpers.
+
 ## 0.2.0
 
 ### Minor Changes

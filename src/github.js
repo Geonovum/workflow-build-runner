@@ -226,6 +226,7 @@ async function createRepository({
   organisation,
   token,
   auth,
+  apiClient,
   appId,
   privateKey,
   installationId,
@@ -241,6 +242,7 @@ async function createRepository({
   }
 
   const api = await resolveGitHubApiClient({
+    apiClient,
     organisation,
     token,
     auth,
@@ -316,6 +318,7 @@ async function buildRepositoryFileset({
   repo,
   token,
   auth,
+  apiClient,
   appId,
   privateKey,
   installationId,
@@ -330,6 +333,7 @@ async function buildRepositoryFileset({
   const includePatterns = normalizePatternList(include, ["**/*"]);
   const excludePatterns = normalizePatternList(exclude, []);
   const api = await resolveGitHubApiClient({
+    apiClient,
     organisation,
     repo,
     token,
@@ -390,6 +394,7 @@ function createGitHubFileReader({
   repo,
   token,
   auth,
+  apiClient,
   appId,
   privateKey,
   installationId,
@@ -400,6 +405,7 @@ function createGitHubFileReader({
   validateRequiredString("branch", branch);
 
   const apiClientPromise = resolveGitHubApiClient({
+    apiClient,
     organisation,
     repo,
     token,
@@ -462,6 +468,7 @@ async function pushFileset({
   repo,
   token,
   auth,
+  apiClient,
   appId,
   privateKey,
   installationId,
@@ -484,6 +491,7 @@ async function pushFileset({
   const normalizedPrefix = normalizePrefix(targetPrefix);
   const normalizedFileset = normalizeFileset(fileset);
   const api = await resolveGitHubApiClient({
+    apiClient,
     organisation,
     repo,
     token,

@@ -1,0 +1,57 @@
+<project name="building-blocks" default="all" basedir=".">
+  <property name="input.dir" value="input"/>
+  <property name="output.dir" value="output"/>
+  <property name="temp.dir" value="temp"/>
+
+  <target name="prepare" description="Initialiseer mappen">
+    <delete dir="${output.dir}" failonerror="no" includeemptydirs="true"/>
+    <delete dir="${temp.dir}" failonerror="no" includeemptydirs="true"/>
+    <mkdir dir="${output.dir}"/>
+    <mkdir dir="${temp.dir}"/>
+  </target>
+
+  <target name="copyAssets" description="Kopieer map met fileset">
+    <copy todir="${output.dir}/assets">
+      <fileset dir="${input.dir}/assets"/>
+    </copy>
+  </target>
+
+  <target name="copySingleFile" description="Kopieer bestand">
+    <copy file="${input.dir}/doc.txt" tofile="${output.dir}/single/doc-copy.txt"/>
+  </target>
+
+  <target name="removeTemporaryFile" description="Verwijder bestand">
+    <delete file="${output.dir}/remove-me.txt" failonerror="no"/>
+  </target>
+
+  <target name="selectFiles" description="Selecteer bestanden met fileset">
+    <copy todir="${temp.dir}/selected">
+      <fileset dir="${input.dir}">
+        <include name="**/*.xml"/>
+        <include name="**/*.txt"/>
+      </fileset>
+    </copy>
+  </target>
+
+  <target name="archive" description="Zip en unzip geselecteerde bestanden">
+    <zip basedir="${temp.dir}/selected" destfile="${output.dir}/selected.zip"/>
+    <unzip src="${output.dir}/selected.zip" dest="${output.dir}/unzipped"/>
+  </target>
+
+  <target name="metadata" description="Lees XML en checksum">
+    <xmlproperty file="${input.dir}/config.xml"/>
+    <checksum file="${output.dir}/unzipped/doc.txt"/>
+  </target>
+
+  <target name="transform" description="Voer XSLT uit">
+    <xslt in="${input.dir}/items.xml" out="${output.dir}/items.txt" style="transform.xsl" processor="trax" force="true">
+      <param name="label" expression="items"/>
+    </xslt>
+  </target>
+
+  <target name="cleanup" description="Ruim tijdelijke selectie op">
+    <delete dir="${temp.dir}/selected" failonerror="no" includeemptydirs="true"/>
+  </target>
+
+  <target name="all" description="Totale bouwblokken-flow" depends="prepare,copyAssets,copySingleFile,removeTemporaryFile,selectFiles,archive,metadata,transform,cleanup"/>
+</project>

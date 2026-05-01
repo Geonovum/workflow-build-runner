@@ -17,10 +17,11 @@
     "README.md"
   ],
   "scripts": {
+    "build": "npm run prepublish:check",
     "lint": "biome check .",
     "format": "biome check --write .",
     "test": "node --test tests/*.test.js",
-    "pack:check": "npm pack --dry-run",
+    "pack:check": "npm pack --dry-run --cache .npm-cache",
     "prepublish:check": "npm run lint && npm test && npm run pack:check",
     "changeset": "changeset",
     "version-packages": "changeset version",

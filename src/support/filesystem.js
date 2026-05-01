@@ -91,7 +91,7 @@ async function findFirstFileByExtension(rootDir, extension) {
 
 async function unzipToDirectory(sourceZipFile, destinationDir) {
   await ensureDir(destinationDir);
-  await ZipLib.extract(sourceZipFile, destinationDir);
+  await ZipLib.extract(sourceZipFile, await fsp.realpath(destinationDir));
 }
 
 async function zipDirectory(sourceDir, destinationZipFile) {

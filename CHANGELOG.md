@@ -1,5 +1,17 @@
 # @geonovum/workflow-build-runner
 
+## 0.3.2
+
+### Patch Changes
+
+- `unzipToDirectory` gebruikt nu bij voorkeur de shell `unzip`-binary; valt terug op `zip-lib` als die niet beschikbaar is. Lost een hang op die optreedt bij yauzl-extracts onder Docker overlay met Node 26+, waarbij de extract-Promise nooit settled en het proces stilletjes exit-eert met code 0 na een gedeeltelijke extractie.
+
+## 0.3.1
+
+### Patch Changes
+
+- Voeg pathExists en emptyDir toe aan publieke build-helpers; copyFile en copyDir ondersteunen nu optie ifExists
+
 ## 0.3.0
 
 ### Minor Changes

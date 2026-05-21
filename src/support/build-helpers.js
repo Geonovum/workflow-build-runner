@@ -6,7 +6,8 @@ const { SaxonJS } = require("./dependencies");
 const {
   fsp,
   ensureDir,
-  pathExists,
+  pathExists: _pathExists,
+  emptyDir: _emptyDir,
   unzipToDirectory,
   zipDirectory,
 } = require("./filesystem");
@@ -23,6 +24,14 @@ const {
 const { xmlProperty } = require("./xml");
 const { compileStylesheetToSef, createCollectionFinder } = require("./xslt");
 
+async function pathExists(filePath) {
+  return _pathExists(path.resolve(String(filePath || "")));
+}
+
+async function emptyDir(dirName) {
+  await _emptyDir(path.resolve(String(dirName || "")));
+}
+
 async function makeDir(dirName) {
   await ensureDir(path.resolve(String(dirName || "")));
 }
@@ -34,19 +43,24 @@ async function deleteDir(dirName) {
   });
 }
 
-async function copyDir(sourceDirName, destinationDirName) {
+async function copyDir(sourceDirName, destinationDirName, { ifExists = false } = {}) {
+  const sourceDir = path.resolve(String(sourceDirName || ""));
+  if (ifExists && !(await _pathExists(sourceDir))) return false;
   await fsp.cp(
-    path.resolve(String(sourceDirName || "")),
+    sourceDir,
     path.resolve(String(destinationDirName || "")),
     { recursive: true, force: true },
   );
+  return true;
 }
 
-async function copyFile(sourceFileName, destinationFileName) {
+async function copyFile(sourceFileName, destinationFileName, { ifExists = false } = {}) {
   const sourceFile = path.resolve(String(sourceFileName || ""));
+  if (ifExists && !(await _pathExists(sourceFile))) return false;
   const destinationFile = path.resolve(String(destinationFileName || ""));
   await ensureDir(path.dirname(destinationFile));
   await fsp.copyFile(sourceFile, destinationFile);
+  return true;
 }
 
 async function deleteFile(fileName) {
@@ -106,7 +120,7 @@ async function xslt({
   sefCacheDir,
 } = {}) {
   const resolvedSourceFile = path.resolve(String(sourceFile || ""));
-  if (!(await pathExists(resolvedSourceFile))) {
+  if (!(await _pathExists(resolvedSourceFile))) {
     throw new Error(
       `Bronbestand voor transformatie niet gevonden: ${resolvedSourceFile}`,
     );
@@ -117,7 +131,7 @@ async function xslt({
     resolvedSefFile = path.resolve(resolvedSefFile);
   } else {
     const resolvedStylesheetFile = path.resolve(String(stylesheetFile || ""));
-    if (!(await pathExists(resolvedStylesheetFile))) {
+    if (!(await _pathExists(resolvedStylesheetFile))) {
       throw new Error(`Stylesheet niet gevonden: ${resolvedStylesheetFile}`);
     }
     resolvedSefFile = await compileStylesheetToSef(
@@ -180,6 +194,8 @@ async function getResource(options) {
 module.exports = {
   fileset,
   normalizeFileset,
+  pathExists,
+  emptyDir,
   makeDir,
   deleteDir,
   copyDir,

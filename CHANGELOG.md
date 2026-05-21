@@ -1,5 +1,11 @@
 # @geonovum/workflow-build-runner
 
+## 0.3.1
+
+### Patch Changes
+
+- Voeg pathExists en emptyDir toe aan publieke build-helpers; copyFile en copyDir ondersteunen nu optie ifExists
+
 ## 0.3.0
 
 ### Minor Changes

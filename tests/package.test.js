@@ -64,6 +64,8 @@ test("package exports the expected public api", () => {
   assert.equal(typeof packageApi.runBuild, "function");
   assert.equal(typeof packageApi.runCli, "function");
   assert.equal(typeof packageApi.build.fileset, "function");
+  assert.equal(typeof packageApi.build.pathExists, "function");
+  assert.equal(typeof packageApi.build.emptyDir, "function");
   assert.equal(typeof packageApi.build.checksum, "function");
   assert.equal(typeof packageApi.build.basename, "function");
   assert.equal(typeof packageApi.build.xslt, "function");

@@ -3,6 +3,7 @@ const fsp = require("node:fs/promises");
 const path = require("node:path");
 
 const { ZipLib } = require("./dependencies");
+const { runProcess } = require("./process");
 
 async function pathExists(absolutePath) {
   try {
@@ -91,7 +92,36 @@ async function findFirstFileByExtension(rootDir, extension) {
 
 async function unzipToDirectory(sourceZipFile, destinationDir) {
   await ensureDir(destinationDir);
-  await ZipLib.extract(sourceZipFile, await fsp.realpath(destinationDir));
+  const realDestination = await fsp.realpath(destinationDir);
+
+  // Prefer the shell `unzip` binary (yauzl-based extractors such as zip-lib
+  // can hang silently on certain Docker overlay + Node combinations, leaving
+  // a partial extraction without throwing). Fall back to ZipLib when `unzip`
+  // is not available on the host.
+  try {
+    const result = await runProcess("unzip", [
+      "-q",
+      "-o",
+      sourceZipFile,
+      "-d",
+      realDestination,
+    ]);
+    if (result.code === 0) {
+      return;
+    }
+    // unzip warnings (code 1) are non-fatal; treat anything higher as failure
+    // and fall through to ZipLib.
+    if (result.code === 1) {
+      return;
+    }
+  } catch (error) {
+    if (error && error.code !== "ENOENT") {
+      throw error;
+    }
+    // `unzip` binary missing — fall through to the JS implementation.
+  }
+
+  await ZipLib.extract(sourceZipFile, realDestination);
 }
 
 async function zipDirectory(sourceDir, destinationZipFile) {

@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<body>
+  <p class="title">Documentatie</p>
+  <p id="d2e1/6817F7B9" class="Standaard">Webpagina <span class="hyperlink"><a href="https://geonovum.github.io/documentatie/" target="_blank">geonovum.github.io/documentatie</a></span> is de verzamelplaats voor alle documentatie van het DSO. De workflow ‘Documentatie’ zet
+    een word-bestand in twee stappen om naar een centrale repository:</p>
+  <ol>
+    <li>
+      <p id="d2e1/2838B4AF" class="Opsomming_nummers_1">Transformatie naar word naar dita. Dit is een generiek informatiemodel waarmee content
+        mediumneutraal opgeslagen kan worden. De bestanden worden opgeslagen in de repository
+        <span class="hyperlink"><a href="https://github.com/Geonovum/documentatie-dita" target="_blank">Geonovum/documentatie-dita</a></span>.</p>
+    </li>
+    <li>
+      <p id="d2e1/6DF99101" class="Opsomming_nummers_1">Transformatie van dita naar html. De bestanden worden opgeslagen in de repository
+        <span class="hyperlink"><a href="https://github.com/Geonovum/documentatie" target="_blank">Geonovum/documentatie</a></span>. De inhoud van deze repository wordt gepubliceerd op de webpagina.</p>
+    </li>
+  </ol>
+  <p id="d2e1/451CD010" class="Alineakop">Metadata</p>
+  <p id="d2e1/1610D979" class="Standaard">De metadata die nodig is om het word-bestand goed om te zetten wordt opgegeven bij
+    optie ‘Info’.</p>
+  <figure id="d2e1/d6e53" style="width: 100%;"><img src="media/image1.png" alt="Geen alternatieve tekst beschikbaar"/><figcaption><span class="number">Figuur 1</span>Tabblad ‘Info’ bevat alle benodigde metadata</figcaption>
+  </figure>
+  <p id="d2e1/3214A2F2" class="Standaard">De volgende velden zijn van belang:</p>
+  <ul>
+    <li>
+      <p id="d2e1/5F4105CB" class="Opsomming_tekens_1">‘Titel’ bevat de titel van het document. Deze wordt in de inhoudsopgave gebruikt.</p>
+    </li>
+    <li>
+      <p id="d2e1/71A51883" class="Opsomming_tekens_1">‘Labels’ bevat ‘keywords’, gescheiden door komma’s, alles met onderkast letters. Deze
+        worden toegevoegd aan de SEO-data van de html-pagina.</p>
+    </li>
+    <li>
+      <p id="d2e1/08B1EC50" class="Opsomming_tekens_1">‘Opmerkingen’ is eigenlijk geen correcte benaming van het veld. ‘Onder water’ wordt
+        dit vertaald naar veld ‘description’. ‘Omschrijving’ is daarom een betere vertaling.</p>
+    </li>
+    <li>
+      <p id="d2e1/512E9D65" class="Opsomming_tekens_1">‘Status’ is een optioneel veld om de status van het document op te geven, alles met
+        onderkast letters.</p>
+    </li>
+    <li>
+      <p id="d2e1/1776F25A" class="Opsomming_tekens_1">‘Categorieën’ is een belangrijk veld. De inhoudsopgave heeft twee niveaus:</p>
+      <ul>
+        <li>
+          <p id="d2e1/30F86BA4" class="Opsomming_tekens_2">‘categorie’ is de hoofdindeling, bestaande uit ‘Algemeen’ of de identifier van het
+            publicatiedomein;</p>
+        </li>
+        <li>
+          <p id="d2e1/15BB5F6F" class="Opsomming_tekens_2">‘subcategorie’ is optioneel. Het bevat een korte aanduiding voor het onderwerp.</p>
+        </li>
+      </ul>
+      <p id="d2e1/7B4A82EA" class="Opsomming_tekens_1">Zowel ‘categorie’ en ‘subcategorie’ worden opgegeven bij veld ‘Categorieën’, gescheiden
+        door een komma.</p>
+    </li>
+    <li>
+      <p id="d2e1/2ECAE1D6" class="Opsomming_tekens_1 space-after">‘Onderwerp’ bevat het onderwerp, alles met onderkast letters. Deze wordt toegevoegd
+        aan de SEO-data van de html-pagina.</p>
+    </li>
+  </ul>
+</body>

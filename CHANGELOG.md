@@ -1,5 +1,15 @@
 # @geonovum/workflow-build-runner
 
+## 0.4.0
+
+### Minor Changes
+
+- Voeg publieke DITA workflow targets toe voor de Geonovum documentatieketen:
+  `workflowTargets.dita.word2dita.*` en `workflowTargets.dita.dita2html.*`.
+- Bundle de herbruikbare documentatie-builds onder `workflows/documentatie`, zodat
+  beheerportaal de Word naar DITA naar HTML workflow via de gepubliceerde package
+  kan uitvoeren.
+
 ## 0.3.1
 
 ### Patch Changes

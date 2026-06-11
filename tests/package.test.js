@@ -81,6 +81,30 @@ test("package exports the expected public api", () => {
   assert.equal(typeof packageApi.workflowTargets.fs.deleteFile, "function");
   assert.equal(typeof packageApi.workflowTargets.fs.unzip, "function");
   assert.equal(typeof packageApi.workflowTargets.fs.zip, "function");
+  assert.equal(
+    typeof packageApi.workflowTargets.dita.word2dita.init,
+    "function",
+  );
+  assert.equal(
+    typeof packageApi.workflowTargets.dita.word2dita.transform,
+    "function",
+  );
+  assert.equal(
+    typeof packageApi.workflowTargets.dita.word2dita.ditamap,
+    "function",
+  );
+  assert.equal(
+    typeof packageApi.workflowTargets.dita.dita2html.init,
+    "function",
+  );
+  assert.equal(
+    typeof packageApi.workflowTargets.dita.dita2html.ditamap,
+    "function",
+  );
+  assert.equal(
+    typeof packageApi.workflowTargets.dita.dita2html.topics,
+    "function",
+  );
   assert.equal(typeof packageApi.workflowTargets.word.common.init, "function");
   assert.equal(
     typeof packageApi.workflowTargets.word.publicatie.xhtmlize,
@@ -513,6 +537,174 @@ test("word publicatie htaccess replaces ANT echo with xmlproperty values", async
     assert.equal(
       await fs.readFile(path.join(outputDir, "1.9.0", ".htaccess"), "utf8"),
       "RewriteEngine On\nRewriteRule ^(.*)$ 2.0.0$1 [NC,L]\n",
+    );
+  } finally {
+    await fs.rm(tempRoot, { recursive: true, force: true });
+  }
+});
+
+test("dita targets transform docx input to dita and html outputs", async () => {
+  const tempRoot = await fs.mkdtemp(
+    path.join(os.tmpdir(), "workflow-build-runner-dita-targets-"),
+  );
+  const buildRoot = path.join(tempRoot, "build");
+  const inputDir = path.join(tempRoot, "input");
+  const docxSourceDir = path.join(tempRoot, "docx-source");
+  const ditaDir = path.join(tempRoot, "dita");
+  const htmlDir = path.join(tempRoot, "html");
+  const tempDir = path.join(tempRoot, "temp");
+  const sefCacheDir = path.join(tempRoot, "sef-cache");
+
+  try {
+    await fs.mkdir(path.join(buildRoot, "css"), { recursive: true });
+    await fs.mkdir(path.join(buildRoot, "media"), { recursive: true });
+    await fs.mkdir(inputDir, { recursive: true });
+    await fs.mkdir(path.join(docxSourceDir, "word", "media"), {
+      recursive: true,
+    });
+    await fs.writeFile(
+      path.join(docxSourceDir, "word", "document.xml"),
+      "<document><title>Voorbeeld</title></document>",
+      "utf8",
+    );
+    await fs.writeFile(
+      path.join(docxSourceDir, "word", "media", "image.txt"),
+      "media",
+      "utf8",
+    );
+    await packageApi.build.zip(
+      docxSourceDir,
+      path.join(inputDir, "voorbeeld.docx"),
+    );
+
+    await fs.writeFile(
+      path.join(buildRoot, "ruimop.xsl"),
+      [
+        '<xsl:stylesheet version="3.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">',
+        '  <xsl:mode on-no-match="shallow-copy"/>',
+        "</xsl:stylesheet>",
+      ].join("\n"),
+      "utf8",
+    );
+    await fs.writeFile(
+      path.join(buildRoot, "word2config.xsl"),
+      [
+        '<xsl:stylesheet version="3.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">',
+        '  <xsl:template match="/">',
+        "    <config><id>voorbeeld</id></config>",
+        "  </xsl:template>",
+        "</xsl:stylesheet>",
+      ].join("\n"),
+      "utf8",
+    );
+    await fs.writeFile(
+      path.join(buildRoot, "word2topic.xsl"),
+      [
+        '<xsl:stylesheet version="3.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">',
+        '  <xsl:template match="/">',
+        '    <topic><title><xsl:value-of select="/document/title"/></title></topic>',
+        "  </xsl:template>",
+        "</xsl:stylesheet>",
+      ].join("\n"),
+      "utf8",
+    );
+    await fs.writeFile(path.join(buildRoot, "template.xml"), "<root/>", "utf8");
+    await fs.writeFile(
+      path.join(buildRoot, "word2ditamap.xsl"),
+      [
+        '<xsl:stylesheet version="3.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">',
+        '  <xsl:param name="repo.dir"/>',
+        '  <xsl:template match="/">',
+        '    <map><repo><xsl:value-of select="$repo.dir"/></repo></map>',
+        "  </xsl:template>",
+        "</xsl:stylesheet>",
+      ].join("\n"),
+      "utf8",
+    );
+    await fs.writeFile(
+      path.join(buildRoot, "ditamap2html.xsl"),
+      [
+        '<xsl:stylesheet version="3.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">',
+        '  <xsl:output method="html"/>',
+        '  <xsl:template match="/">',
+        "    <html><body>index</body></html>",
+        "  </xsl:template>",
+        "</xsl:stylesheet>",
+      ].join("\n"),
+      "utf8",
+    );
+    await fs.writeFile(
+      path.join(buildRoot, "topic2html.xsl"),
+      [
+        '<xsl:stylesheet version="3.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">',
+        '  <xsl:output method="html"/>',
+        '  <xsl:template match="/">',
+        '    <html><body><xsl:value-of select="/topic/title"/></body></html>',
+        "  </xsl:template>",
+        "</xsl:stylesheet>",
+      ].join("\n"),
+      "utf8",
+    );
+    await fs.writeFile(path.join(buildRoot, "css", "index.css"), "index");
+    await fs.writeFile(path.join(buildRoot, "css", "style.css"), "style");
+    await fs.writeFile(path.join(buildRoot, "media", "logo.txt"), "logo");
+
+    const wordContext = {
+      buildRoot,
+      inputDir,
+      outputDir: ditaDir,
+      tempDir,
+      sefCacheDir,
+    };
+
+    await packageApi.workflowTargets.dita.word2dita.init(wordContext);
+    await packageApi.workflowTargets.dita.word2dita.transform(wordContext);
+    await packageApi.workflowTargets.dita.word2dita.ditamap(wordContext);
+
+    assert.match(
+      await fs.readFile(path.join(ditaDir, "voorbeeld", "topic.dita"), "utf8"),
+      /<topic><title>Voorbeeld<\/title><\/topic>/,
+    );
+    assert.match(
+      await fs.readFile(path.join(ditaDir, "voorbeeld", "config.xml"), "utf8"),
+      /<config><id>voorbeeld<\/id><\/config>/,
+    );
+    assert.equal(
+      await fs.readFile(
+        path.join(ditaDir, "voorbeeld", "media", "image.txt"),
+        "utf8",
+      ),
+      "media",
+    );
+
+    const htmlContext = {
+      buildRoot,
+      inputDir: ditaDir,
+      outputDir: path.join(tempRoot, "unused-output"),
+      repoDir: htmlDir,
+      tempDir,
+      sefCacheDir,
+    };
+
+    await packageApi.workflowTargets.dita.dita2html.init(htmlContext);
+    await packageApi.workflowTargets.dita.dita2html.ditamap(htmlContext);
+    await packageApi.workflowTargets.dita.dita2html.topics(htmlContext);
+
+    assert.match(
+      await fs.readFile(path.join(htmlDir, "index.html"), "utf8"),
+      /index/,
+    );
+    assert.match(
+      await fs.readFile(path.join(htmlDir, "voorbeeld", "topic.html"), "utf8"),
+      /Voorbeeld/,
+    );
+    assert.equal(
+      await fs.readFile(path.join(htmlDir, "voorbeeld", "style.css"), "utf8"),
+      "style",
+    );
+    assert.equal(
+      await fs.readFile(path.join(htmlDir, "media", "logo.txt"), "utf8"),
+      "logo",
     );
   } finally {
     await fs.rm(tempRoot, { recursive: true, force: true });

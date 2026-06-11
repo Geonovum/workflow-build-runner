@@ -140,6 +140,72 @@ Available filesystem target factories:
 - `workflowTargets.fs.zip({ source, destination })`
 - `workflowTargets.fs.unzip({ source, destination })`
 
+## DITA Document Workflows
+
+The DITA targets implement the Geonovum `Werkbestanden/dita` document chain:
+
+- `workflowTargets.dita.word2dita.*`: transform uploaded `.docx` files into
+  DITA packages (`documentatie.xml`, `<config.id>/topic.dita`,
+  `<config.id>/config.xml`, and optional media)
+- `workflowTargets.dita.dita2html.*`: transform that DITA package into the HTML
+  package used by `Geonovum/documentatie`
+
+The workflow stylesheets and assets stay repository-local in `buildRoot`.
+`word2dita` writes DITA files to `outputDir`. `dita2html` reads DITA files from
+`inputDir` and writes HTML files to `repoDir` when provided, otherwise
+`outputDir`.
+
+Word to DITA example:
+
+```js
+const workflowBuild = require("@geonovum/workflow-build-runner");
+
+module.exports = workflowBuild.defineBuild({
+  defaultTarget: "word2dita",
+  targets: {
+    init: workflowBuild.workflowTargets.dita.word2dita.init,
+    transform: workflowBuild.workflowTargets.dita.word2dita.transform,
+    ditamap: workflowBuild.workflowTargets.dita.word2dita.ditamap,
+    word2dita: workflowBuild.sequence(["init", "transform", "ditamap"]),
+  },
+});
+```
+
+DITA to HTML example:
+
+```js
+const workflowBuild = require("@geonovum/workflow-build-runner");
+
+module.exports = workflowBuild.defineBuild({
+  defaultTarget: "dita2html",
+  targets: {
+    init: workflowBuild.workflowTargets.dita.dita2html.init,
+    ditamap: workflowBuild.workflowTargets.dita.dita2html.ditamap,
+    topics: workflowBuild.workflowTargets.dita.dita2html.topics,
+    dita2html: workflowBuild.sequence(["init", "ditamap", "topics"]),
+  },
+});
+```
+
+Commit the generated HTML package to `Geonovum/documentatie` with the existing
+GitHub helper:
+
+```js
+const localFiles = await workflowBuild.build.fileset({
+  dir: context.repoDir,
+  include: "**/*",
+});
+
+await workflowBuild.github.pushFileset({
+  organisation: "Geonovum",
+  repo: "documentatie",
+  auth: githubAuth,
+  branch: "main",
+  fileset: localFiles,
+  message: "Publiceer documentatie",
+});
+```
+
 ## Example
 
 ```js

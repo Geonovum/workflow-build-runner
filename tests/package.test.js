@@ -1114,6 +1114,69 @@ test("github.createGitHubFileReader reads base64 content through an injected API
   assert.equal(buffer.toString("utf8"), "<root/>");
 });
 
+test("github.createGitHubFileReader leest via de Blobs-API als meta.sha bekend is", async () => {
+  const calls = [];
+  const apiClient = {
+    async request(urlPath) {
+      calls.push(urlPath);
+      assert.equal(urlPath, "/repos/acme/demo/git/blobs/blob-sha-1");
+      return {
+        encoding: "base64",
+        content: Buffer.from("<groot/>").toString("base64"),
+      };
+    },
+  };
+  const readContent = packageApi.github.createGitHubFileReader({
+    organisation: "acme",
+    repo: "demo",
+    branch: "main",
+    apiClient,
+  });
+
+  const buffer = await readContent({
+    path: "groot.xml",
+    sourcePath: "src/groot.xml",
+    meta: { sha: "blob-sha-1" },
+  });
+
+  assert.equal(buffer.toString("utf8"), "<groot/>");
+  // Geen Contents-API-aanroep: direct via de Blobs-API.
+  assert.deepEqual(calls, ["/repos/acme/demo/git/blobs/blob-sha-1"]);
+});
+
+test("github.createGitHubFileReader valt voor >1 MB terug op de Blobs-API (Contents-API geeft encoding 'none')", async () => {
+  const bigContent = `<groot>${"x".repeat(2_000_000)}</groot>`;
+  const apiClient = {
+    async request(urlPath) {
+      if (urlPath === "/repos/acme/demo/contents/src/groot.xml?ref=main") {
+        // Zoals GitHub voor bestanden > 1 MB: metadata met sha maar leeg content-veld.
+        return { type: "file", content: "", encoding: "none", sha: "blob-sha-2" };
+      }
+      if (urlPath === "/repos/acme/demo/git/blobs/blob-sha-2") {
+        return {
+          encoding: "base64",
+          content: Buffer.from(bigContent).toString("base64"),
+        };
+      }
+      throw new Error(`onverwacht pad: ${urlPath}`);
+    },
+  };
+  const readContent = packageApi.github.createGitHubFileReader({
+    organisation: "acme",
+    repo: "demo",
+    branch: "main",
+    apiClient,
+  });
+
+  // Geen meta.sha: dwingt het Contents-API-pad + fallback via content.sha af.
+  const buffer = await readContent({
+    path: "groot.xml",
+    sourcePath: "src/groot.xml",
+  });
+
+  assert.equal(buffer.toString("utf8"), bigContent);
+});
+
 test("github.pushFileset creates blobs, tree, commit and branch update", async () => {
   const calls = [];
   const apiClient = {

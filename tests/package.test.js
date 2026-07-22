@@ -1150,7 +1150,12 @@ test("github.createGitHubFileReader valt voor >1 MB terug op de Blobs-API (Conte
     async request(urlPath) {
       if (urlPath === "/repos/acme/demo/contents/src/groot.xml?ref=main") {
         // Zoals GitHub voor bestanden > 1 MB: metadata met sha maar leeg content-veld.
-        return { type: "file", content: "", encoding: "none", sha: "blob-sha-2" };
+        return {
+          type: "file",
+          content: "",
+          encoding: "none",
+          sha: "blob-sha-2",
+        };
       }
       if (urlPath === "/repos/acme/demo/git/blobs/blob-sha-2") {
         return {

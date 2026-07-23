@@ -389,6 +389,22 @@ async function readLocalFileContent(file) {
   return await fsp.readFile(file.sourcePath);
 }
 
+// Leest een blob-inhoud via de Git Blobs-API (base64). In tegenstelling tot de Contents-API kent
+// deze geen 1 MB-limiet: de Contents-API geeft voor bestanden > 1 MB een leeg `content`-veld terug
+// (`encoding: "none"`), waardoor een naïeve base64-decode een 0-byte buffer oplevert. De Blobs-API
+// levert base64 tot 100 MB en is binair-veilig.
+async function readGitHubBlob(api, organisation, repo, sha) {
+  const blob = await api.request(
+    `/repos/${organisation}/${repo}/git/blobs/${encodeURIComponent(sha)}`,
+  );
+  if (blob?.encoding !== "base64" || typeof blob.content !== "string") {
+    throw new Error(
+      `Onverwacht blob-antwoord voor ${sha} (encoding: ${blob?.encoding}).`,
+    );
+  }
+  return Buffer.from(blob.content.replace(/\n/g, ""), "base64");
+}
+
 function createGitHubFileReader({
   organisation,
   repo,
@@ -416,6 +432,14 @@ function createGitHubFileReader({
   });
   return async function readGitHubFileContent(file) {
     const api = await apiClientPromise;
+
+    // Snelste, limietloze pad: als de fileset de blob-sha kent (buildRepositoryFileset zet die in
+    // meta.sha), lees direct via de Blobs-API. Dit omzeilt de 1 MB-limiet van de Contents-API.
+    const knownSha = file?.meta?.sha;
+    if (knownSha) {
+      return await readGitHubBlob(api, organisation, repo, knownSha);
+    }
+
     const encodedPath = file.sourcePath
       .split("/")
       .map(encodeURIComponent)
@@ -430,9 +454,17 @@ function createGitHubFileReader({
       throw new Error(`Pad is geen bestand: ${file.sourcePath}`);
     }
 
-    return Buffer.from(
-      String(content.content || "").replace(/\n/g, ""),
-      "base64",
+    // Contents-API levert base64 tot 1 MB. Boven die grens is `content` leeg en `encoding` "none";
+    // val dan terug op de Blobs-API via de meegeleverde sha zodat grote bestanden niet als 0-byte
+    // buffer binnenkomen. Decoderen zodra er inhoud is, zodat het `encoding`-veld niet vereist is.
+    if (content.content) {
+      return Buffer.from(content.content.replace(/\n/g, ""), "base64");
+    }
+    if (content.sha) {
+      return await readGitHubBlob(api, organisation, repo, content.sha);
+    }
+    throw new Error(
+      `Kon inhoud niet lezen voor ${file.sourcePath} (encoding: ${content.encoding}).`,
     );
   };
 }

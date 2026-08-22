@@ -101,7 +101,8 @@
       <xsl:attribute name="navtitle" select="$item/@title"/>
     </xsl:element>
     <!-- maak ditamap -->
-    <xsl:result-document href="{concat($repo.dir,$delimiter,string-join(('documentatie',format-number($item/@index,'0000')),'-'),'.ditamap')}" method="xml" indent="yes" version="1.0" encoding="UTF-8" doctype-public="-//OASIS//DTD DITA Map//EN" doctype-system="map.dtd">
+    <!-- number() is nodig: Saxon-JS converteert een untyped attribuut binnen een AVT niet naar xs:double, format-number() levert dan NaN op -->
+    <xsl:result-document href="{concat($repo.dir,$delimiter,string-join(('documentatie',format-number(number($item/@index),'0000')),'-'),'.ditamap')}" method="xml" indent="yes" version="1.0" encoding="UTF-8" doctype-public="-//OASIS//DTD DITA Map//EN" doctype-system="map.dtd">
       <xsl:element name="map">
         <xsl:element name="title">
           <xsl:value-of select="$item/@title"/>

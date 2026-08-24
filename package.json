@@ -2,6 +2,10 @@
   "name": "@geonovum/workflow-build-runner",
   "version": "0.4.2",
   "description": "Workflow build runner for JavaScript build definitions and XSLT-based document workflows.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Geonovum/workflow-build-runner.git"
+  },
   "main": "index.js",
   "exports": {
     ".": "./index.js",

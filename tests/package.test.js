@@ -66,6 +66,10 @@ test("package metadata identifies the trusted publisher repository", () => {
   });
 });
 
+test("release tooling uses the Changesets CLI required by action v2", () => {
+  assert.match(packageMetadata.devDependencies["@changesets/cli"], /^\^3\./);
+});
+
 test("release workflow uses the Changesets v2 input contract", async () => {
   const workflow = await fs.readFile(
     path.join(repoRoot, ".github", "workflows", "release.yml"),

@@ -7,6 +7,7 @@ const test = require("node:test");
 
 const repoRoot = path.resolve(__dirname, "..");
 const packageApi = require("..");
+const packageMetadata = require("../package.json");
 
 function fixturePath(...segments) {
   return path.join(repoRoot, "tests", "fixtures", ...segments);
@@ -57,6 +58,43 @@ async function runCli(args) {
     });
   });
 }
+
+test("package metadata identifies the trusted publisher repository", () => {
+  assert.deepEqual(packageMetadata.repository, {
+    type: "git",
+    url: "git+https://github.com/Geonovum/workflow-build-runner.git",
+  });
+});
+
+test("release tooling uses the Changesets CLI required by action v2", () => {
+  assert.match(packageMetadata.devDependencies["@changesets/cli"], /^\^3\./);
+});
+
+test("release workflow uses the Changesets v2 input contract", async () => {
+  const workflow = await fs.readFile(
+    path.join(repoRoot, ".github", "workflows", "release.yml"),
+    "utf8",
+  );
+
+  assert.match(
+    workflow,
+    /^\s+uses:\s+changesets\/action@8488615a623b1b9c987934bb89eae8af6a946ac1\s+# v2\.1\.1$/m,
+  );
+  assert.match(workflow, /^\s+github-token:\s+\$\{\{ github\.token \}\}$/m);
+  assert.match(workflow, /^\s+version-script:\s+npm run version-packages$/m);
+  assert.match(workflow, /^\s+publish-script:\s+npm run release$/m);
+  assert.doesNotMatch(workflow, /^\s+(?:version|publish):\s+npm run /m);
+});
+
+test("release workflow uses npm trusted publishing without a token", async () => {
+  const workflow = await fs.readFile(
+    path.join(repoRoot, ".github", "workflows", "release.yml"),
+    "utf8",
+  );
+
+  assert.match(workflow, /^\s+id-token:\s+write$/m);
+  assert.doesNotMatch(workflow, /\b(?:GITHUB_TOKEN|NPM_TOKEN)\b/);
+});
 
 test("package exports the expected public api", () => {
   assert.equal(typeof packageApi.defineBuild, "function");

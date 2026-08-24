@@ -1,7 +1,11 @@
 {
   "name": "@geonovum/workflow-build-runner",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "description": "Workflow build runner for JavaScript build definitions and XSLT-based document workflows.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Geonovum/workflow-build-runner.git"
+  },
   "main": "index.js",
   "exports": {
     ".": "./index.js",
@@ -48,6 +52,6 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.11",
-    "@changesets/cli": "^2.30.0"
+    "@changesets/cli": "^3.0.1"
   }
 }
